@@ -1,3 +1,4 @@
+
 /****************************************************************************************[Solver.h]
 MiniSat -- Copyright (c) 2003-2006, Niklas Een, Niklas Sorensson
            Copyright (c) 2007-2010, Niklas Sorensson
@@ -177,6 +178,10 @@ public:
     int       learntsize_adjust_start_confl;
     double    learntsize_adjust_inc;
 
+    // Activating heuristics for low/high entropy
+    double    backbone_low;
+    double    backbone_high;
+
     // Statistics: (read-only member variable)
     //
     uint64_t solves, starts, decisions, rnd_decisions, propagations, conflicts, conflicts_glue;
@@ -251,6 +256,7 @@ protected:
 
     ClauseAllocator     ca;
 
+    double              backbone;         // Backbone of the formumla, trail.size()/nVars()
     // Temporaries (to reduce allocation overhead). Each variable is prefixed by the method in which it is
     // used, exept 'seen' wich is used in several places.
     //

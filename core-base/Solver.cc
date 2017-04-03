@@ -44,8 +44,8 @@ static BoolOption    opt_rnd_init_act      (_cat, "rnd-init",    "Randomize the 
 static IntOption     opt_restart_first     (_cat, "rfirst",      "The base restart interval", 100, IntRange(1, INT32_MAX));
 static DoubleOption  opt_restart_inc       (_cat, "rinc",        "Restart interval increase factor", 2, DoubleRange(1, false, HUGE_VAL, false));
 static DoubleOption  opt_garbage_frac      (_cat, "gc-frac",     "The fraction of wasted memory allowed before a garbage collection is triggered",  0.20, DoubleRange(0, false, HUGE_VAL, false));
-
-
+static DoubleOption  opt_backbone_thres_l  (_cat, "bb-thres-l",   "The backbone threshold for activating heuristic for low entropy >=",      0.5,       DoubleRange(0, false, 1, false) );
+static DoubleOption  opt_backbone_thres_h  (_cat, "bb-thres-h",    "The backbone threshold for activating heuristic for high entropy <=",    0.2,       DoubleRange(0, false, 1, false));
 //=================================================================================================
 // Constructor/Destructor:
 
@@ -68,7 +68,9 @@ Solver::Solver() :
   , garbage_frac     (opt_garbage_frac)
   , restart_first    (opt_restart_first)
   , restart_inc      (opt_restart_inc)
-
+    // params for backbone threshold
+  , backbone_low     (opt_backbone_thres_l)
+  , backbone_high    (opt_backbone_thres_h)
     // Parameters (the rest):
     //
   , learntsize_factor((double)1/(double)3), learntsize_inc(1.1)
@@ -837,6 +839,17 @@ lbool Solver::search(int& nof_conflicts)
             bool restart = false;
             if (!glucose_restart)
                 restart = nof_conflicts <= 0;
+            if (decisionLevel() == 0) {
+                // update and print backbone
+                // if backbone value has changed
+                if (backbone != (float)trail.size()/nVars()) 
+                {
+                    // print decision,value
+                    printf("#Decisions:%lu, Backbone:%lf\n", decisions, backbone);
+                    // update backbone
+                    backbone = (float)trail.size()/nVars();
+                }
+            }   
             else if (!cached){
                 double K = nof_conflicts > 0 ? 0.8 : 0.9;
                 restart = lbd_queue.full() && (lbd_queue.avg() * K > global_lbd_sum / conflicts_glue);
